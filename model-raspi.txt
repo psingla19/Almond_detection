@@ -1,0 +1,77 @@
+steps for raspi configuration
+
+https://docs.roboflow.com/deploy/raspberry-pi
+
+
+
+
+
+model
+
+import cv2
+import os
+import time
+from roboflow import Roboflow
+rf = Roboflow(api_key="6y1EgEYpiDZBOZwCpIOR")
+project = rf.workspace().project("almond-detection")
+model = project.version(1).model
+
+
+# Get webcam interface via opencv-python
+video = cv2.VideoCapture(0)
+
+a =0
+# Infer via the Roboflow Infer API and return the result
+def infer():
+    # Get the current image from the webcam
+    ret, img = video.read()
+    cv2.imwrite(os.path.join("D:\model", '%d.jpg') % a, img)
+
+    predictions = model.predict("0.jpg", confidence=50).json()
+
+    for bounding_box in predictions['predictions']:
+        x0 = bounding_box['x'] - bounding_box['width'] / 2
+        x1 = bounding_box['x'] + bounding_box['width'] / 2
+        y0 = bounding_box['y'] - bounding_box['height'] / 2
+        y1 = bounding_box['y'] + bounding_box['height'] / 2
+            
+        start_point = (int(x0), int(y0))
+        end_point = (int(x1), int(y1))
+        img = cv2.rectangle(img, start_point, end_point, color=(0,0,0), thickness=1)
+    
+        img = cv2.putText(
+        img,
+        bounding_box["class"],
+        (int(x0), int(y0) - 10),
+        fontFace = cv2.FONT_HERSHEY_SIMPLEX,
+        fontScale = 0.6,
+        color = (255, 255, 255),
+        thickness=2
+        )
+
+    
+
+    return img
+
+
+
+# Main loop; infers sequentially until you press "q"
+while 1:
+    # On "q" keypress, exit
+    if(cv2.waitKey(1) == ord('q')):
+        break
+
+    # Capture start time to calculate fps
+    start = time.time()
+
+    # Synchronously get a prediction from the Roboflow Infer API
+    image = infer()
+    # And display the inference results
+    cv2.imshow('image', image)
+
+    # Print frames per second
+    print((1/(time.time()-start)), " fps")
+
+# Release resources when finished
+video.release()
+cv2.destroyAllWindows()
