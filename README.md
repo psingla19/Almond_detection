@@ -21,7 +21,6 @@ note:- only for tf 2.11 and above on windows
 4. create and activate virtual environment
 5. install cuda and cdnn
 6. install tensorflow 
-7. vala
 8. not working
 
 
